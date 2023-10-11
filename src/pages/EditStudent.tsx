@@ -82,6 +82,11 @@ const EditStudent = () => {
     setIsLoading(true);
     const stagesLength = Object.keys(STAGES).length / 2;
     const newStage = stage + 1;
+    let _studentName = studentName?.trim();
+
+    const state = history.location.state as any;
+    const tmpPath = state?.from ?? PAGES.HOME;
+    
     //Completed all stages
     if (stagesLength === newStage) {
       //Creating Profile for the Student
@@ -90,7 +95,7 @@ const EditStudent = () => {
       if (isEdit && !!currentStudent && !!currentStudent.docId) {
         student = await api.updateStudent(
           currentStudent,
-          studentName!,
+          _studentName!,
           age ?? currentStudent.age!,
           gender ?? currentStudent.gender!,
           avatar ?? currentStudent.avatar!,
@@ -112,7 +117,7 @@ const EditStudent = () => {
         });
       } else {
         student = await api.createProfile(
-          studentName!,
+          _studentName!,
           age,
           gender,
           avatar,
@@ -146,8 +151,7 @@ const EditStudent = () => {
         await Util.setCurrentStudent(
           student,
           langIndex && languages ? languages[langIndex]?.code : undefined,
-          false,
-          false
+          tmpPath === PAGES.HOME ? true : false
         );
       }
       console.log(
@@ -155,8 +159,8 @@ const EditStudent = () => {
         student
       );
 
-      const state = history.location.state as any;
-      history.replace(state?.from ?? PAGES.HOME);
+     
+      history.replace(tmpPath);
     } else {
       if (newStage === STAGES.GRADE) {
         const results = await Promise.all([
@@ -180,9 +184,12 @@ const EditStudent = () => {
   const isNextButtonEnabled = () => {
     switch (stage) {
       case STAGES.NAME:
-        return !!studentName;
+        return !!studentName.trim();
       case STAGES.GENDER_AND_AGE:
-        return !!gender && !!age;
+        if(gender===GENDER.BOY || gender===GENDER.GIRL){
+          return !!gender && !!age;
+        }
+        return false;
       case STAGES.AVATAR:
         return !!avatar;
       case STAGES.GRADE:

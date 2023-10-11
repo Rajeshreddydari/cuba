@@ -7,6 +7,8 @@ import {
   LEADERBOARDHEADERLIST,
   PAGES,
   PARENTHEADERLIST,
+  MODES,
+  LANGUAGE
 } from "../common/constants";
 // import LeftTitleRectangularIconButton from "../components/parent/LeftTitleRectangularIconButton";
 import { ServiceConfig } from "../services/ServiceConfig";
@@ -29,8 +31,11 @@ import { t } from "i18next";
 // import { EmailComposer } from "@ionic-native/email-composer";
 // import Share from "react";
 import { Util } from "../utility/util";
+// import auth from "../models/auth";
 import i18n from "../i18n";
 import IconButton from "../components/IconButton";
+
+import { schoolUtil } from "../utility/schoolUtil";
 
 const Leaderboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -45,9 +50,9 @@ const Leaderboard: React.FC = () => {
   const [currentUserDataContent, setCurrentUserDataContent] = useState<
     string[][]
   >([]);
+  const [studentMode, setStudentMode] = useState<string | undefined>();
   const api = ServiceConfig.getI().apiHandler;
   const auth = ServiceConfig.getI().authHandler;
-
   const history = useHistory();
 
   const [weeklyList, setWeeklyList] = useState<
@@ -84,6 +89,8 @@ const Leaderboard: React.FC = () => {
       const getClass = await FirebaseApi.i.getStudentResult(
         currentStudent.docId
       );
+      const currMode = await schoolUtil.getCurrMode();
+      setStudentMode(currMode);
       if (getClass?.classes != undefined) {
         fetchLeaderBoardData(currentStudent, true, getClass?.classes[0]);
         setCurrentClass(getClass);
@@ -157,7 +164,7 @@ const Leaderboard: React.FC = () => {
         tempCurrentUserDataContent = [
           // ["Name", element.name],
           [t("Rank"), i + 1],
-          [t("Last Played"), element.lessonsPlayed],
+          [t("Lesson Played"), element.lessonsPlayed],
           [t("Score"), element.score],
           [
             t("Time Spent"),
@@ -170,7 +177,7 @@ const Leaderboard: React.FC = () => {
       tempCurrentUserDataContent = [
         // ["Name", element.name],
         [t("Rank"), "--"],
-        [t("Last Played"), "--"],
+        [t("Lesson Played"), "--"],
         [t("Score"), "--"],
         [t("Time Spent"), "--" + t("min") + " --" + t("sec")],
       ];
@@ -230,9 +237,7 @@ const Leaderboard: React.FC = () => {
             <img
               className="avatar-img"
               src={
-                "assets/avatars/" +
-                (currentStudent?.avatar ?? AVATARS[0]) +
-                ".png"
+                (studentMode === MODES.SCHOOL && currentStudent?.image) || ("assets/avatars/" + (currentStudent?.avatar ?? AVATARS[0]) + ".png")
               }
               alt=""
             />
@@ -365,7 +370,14 @@ const Leaderboard: React.FC = () => {
                         }}
                         id="leaderboard-right-UI-content"
                       >
-                        {d}
+                        {i === 1 ?
+                          <p id="leaderboard-profile-name">
+                            {Number(currentUserDataContent[0][1]) === headerRowIndicator && currentStudent?.name
+                              ? currentStudent?.name
+                              : d
+                            }
+                          </p>
+                          : d}
                       </p>
                     </IonCol>
                   );
@@ -415,6 +427,7 @@ const Leaderboard: React.FC = () => {
         <Box>
           <div id="LeaderBoard-Header">
             <BackButton
+              // iconSize={"8vh"}
               onClicked={() => {
                 history.replace(PAGES.HOME);
               }}
@@ -427,7 +440,7 @@ const Leaderboard: React.FC = () => {
                   flexDirection: "inherit",
                   justifyContent: "space-between",
                   padding: "1vh 1vw",
-                  backgroundColor: "#E2DEDE !important",
+                  backgroundColor: "#e2dede !important",
                   boxShadow: "0px 0px 0px 0px !important",
                 }}
               >
@@ -481,11 +494,12 @@ const Leaderboard: React.FC = () => {
                     );
                     if (langDoc) {
                       const tempLangCode = langDoc.code ?? LANG.ENGLISH;
+                      localStorage.setItem(LANGUAGE, tempLangCode)
                       await i18n.changeLanguage(tempLangCode);
                     }
                   }
-                  // history.replace(PAGES.DISPLAY_STUDENT);
-                  history.replace(PAGES.SELECT_MODE);
+                  history.replace(PAGES.DISPLAY_STUDENT);
+                  // history.replace(PAGES.SELECT_MODE);
                 }}
               />
             </div>

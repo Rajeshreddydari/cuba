@@ -29,6 +29,7 @@ const LessonCard: React.FC<{
   isLoved: boolean | undefined;
   lessonData: Lesson[];
   startIndex: number;
+  showChapterName : boolean;
 }> = ({
   width,
   height,
@@ -44,11 +45,17 @@ const LessonCard: React.FC<{
   isLoved,
   lessonData,
   startIndex,
+  showChapterName = false,
 }) => {
   const history = useHistory();
+  const [showImage, setShowImage] = useState(true);
+  const [subject, setSubject] = useState<Subject>();
   // const [subject, setSubject] = useState<Subject>();
   const [currentCourse, setCurrentCourse] = useState<Course>();
 
+  const hideImg = (event: any) => {
+    setShowImage(false);
+  };
   // const subjectCode = lesson.chapter.course.id;
   useEffect(() => {
     // getSubject();
@@ -72,22 +79,27 @@ const LessonCard: React.FC<{
     if (!currentStudent) {
       return;
     }
-    const courses =
-      await ServiceConfig.getI().apiHandler.getCoursesForParentsStudent(
-        currentStudent
+    const api = ServiceConfig.getI().apiHandler;
+      const courses =
+        await api.getCoursesForParentsStudent(
+          currentStudent
+        );
+      console.log("Student Courses ", courses);
+
+      let currentCourse = courses.find(
+        (course) => lesson.cocosSubjectCode === course.courseCode
       );
-    console.log("Student Courses ", courses);
 
-    let currentCourse = courses.find(
-      (course) => lesson.cocosSubjectCode === course.courseCode
-    );
-
-    console.log("current Course ", currentCourse);
-    if (!currentCourse) {
-      return;
-    }
-
-    setCurrentCourse(currentCourse);
+      console.log("current Course ", currentCourse);
+      if (!currentCourse) {
+        let lessonCourse = await api.getCourseFromLesson(lesson);
+        if (!!lessonCourse) {
+          console.log("current Course from all courses ", lessonCourse);
+          setCurrentCourse(lessonCourse)
+        }
+      } else {
+        setCurrentCourse(currentCourse);
+      }
   };
 
   // const lessonCardColor =
@@ -167,6 +179,16 @@ const LessonCard: React.FC<{
           }}
           color={lessonCardColor}
         >
+          <div id="lesson-card-homework-icon">
+            {lesson.assignment != undefined ? (
+              <div>
+                <img
+                  src="assets/icons/homework_icon.svg"
+                  className="lesson-card-homework-indicator"
+                />
+              </div>
+            ) : null}
+          </div>
           {showSubjectName && currentCourse?.title ? (
             <div id="lesson-card-subject-name">
               <p>
@@ -222,11 +244,16 @@ const LessonCard: React.FC<{
             ) : (
               <div />
             )}
-            {isLoved && <LovedIcon isLoved={isLoved} />}
           </div>
+          {isLoved && <LovedIcon isLoved={isLoved} hasChapterTitle={!!lesson.chapterTitle && showChapterName} />}
         </div>
       </div>
       {showText ? <p id="lesson-card-name">{t(lesson?.title)}</p> : null}
+      {showChapterName && lesson.chapterTitle &&
+        <div id="chapter-title">
+          {lesson.chapterTitle}
+        </div>
+      }
     </IonCard>
   );
 };

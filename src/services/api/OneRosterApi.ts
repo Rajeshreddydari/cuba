@@ -19,6 +19,7 @@ import Subject from "../../models/subject";
 import StudentProfile from "../../models/studentProfile";
 import school from "../../models/school";
 import School from "../../models/school";
+import Avatar from "../../models/avatar";
 
 export class OneRosterApi implements ServiceApi {
   public static i: OneRosterApi;
@@ -44,7 +45,10 @@ export class OneRosterApi implements ServiceApi {
   ): Promise<{ grades: Grade[]; courses: Course[] }> {
     throw new Error("Method not implemented.");
   }
-  private constructor() { }
+  private constructor() {}
+  getAvatarInfo(): Promise<Avatar | undefined> {
+    throw new Error("Method not implemented.");
+  }
   updateTcAccept(user: User, value: boolean) {
     throw new Error("Method not implemented.");
   }
@@ -53,7 +57,7 @@ export class OneRosterApi implements ServiceApi {
     throw new Error("Method not implemented.");
   }
 
-  getCoursesByGrade(gradeDocId: any): Promise<Course[]>{
+  getCoursesByGrade(gradeDocId: any): Promise<Course[]> {
     throw new Error("Method not implemented.");
   }
   getAllCourses(): Promise<Course[]> {
@@ -820,5 +824,9 @@ export class OneRosterApi implements ServiceApi {
       chapters[Math.min(index, chapters.length - 1)]?.id
     );
     return chapters[Math.min(index, chapters.length - 1)] ?? chapters[1];
+  }
+
+  public async getCourseFromLesson(lesson: Lesson): Promise<Course | undefined> {
+    throw new Error("Method not implemented.");
   }
 }

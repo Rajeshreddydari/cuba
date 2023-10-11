@@ -31,6 +31,7 @@ declare global {
 const Login: React.FC = () => {
   const history = useHistory();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [sentOtpLoading, setSentOtpLoading] = useState<boolean>(false);
   const [showVerification, setShowVerification] = useState<boolean>(false);
   const [showBackButton, setShowBackButton] = useState<boolean>(false);
   const [showNameInput, setShowNameInput] = useState<boolean>(false);
@@ -53,7 +54,6 @@ const Login: React.FC = () => {
   const [showTimer, setShowTimer] = useState<boolean>(false);
   const [showResendOtp, setShowResendOtp] = useState<boolean>(false);
   const [spinnerLoading, setSpinnerLoading] = useState<boolean>(false);
-  const [sentOtpLoading, setSentOtpLoading] = useState<boolean>(false);
   const [isInvalidCode, setIsInvalidCode] = useState<{
     isInvalidCode: boolean;
     isInvalidCodeLength: boolean;
@@ -133,9 +133,8 @@ const Login: React.FC = () => {
         history.replace(PAGES.DISPLAY_STUDENT);
       }
       if (isUserLoggedIn) {
-        console.log("navigating to app lang");
         setIsLoading(false);
-        history.replace(PAGES.HOME);
+        history.replace(PAGES.SELECT_MODE);
       }
       setIsLoading(false);
     });
@@ -204,7 +203,6 @@ const Login: React.FC = () => {
       setSentOtpLoading(true);
       let phoneNumberWithCountryCode = countryCode + phoneNumber;
       if (phoneNumber.length != 10) {
-        setSpinnerLoading(false);
         alert("Phone Number Invalid " + phoneNumber);
         return;
       }
@@ -236,7 +234,8 @@ const Login: React.FC = () => {
         setCounter(59);
         setShowBackButton(true);
         setSpinnerLoading(false);
-        // setIsLoading(false);
+
+
       } else {
         console.log("Phone Number signin Failed ");
         setSpinnerLoading(false);
@@ -320,6 +319,7 @@ const Login: React.FC = () => {
   }
 
   async function resendOtpHandler() {
+
     try {
       if (!(counter <= 0)) {
         return;
@@ -338,13 +338,16 @@ const Login: React.FC = () => {
         setShowResendOtp(false);
         setCounter(59);
         setVerificationCode("");
-      } else {
+      }
+      else {
         setSentOtpLoading(false);
         console.log("Resend Otp failed");
+
       }
     } catch (error) {
       console.log("Resend Otp Failed With Error " + error);
       setSentOtpLoading(false);
+      alert("Resend Otp Failed " + error);
       recaptchaVerifier!.clear();
     }
   }
@@ -368,7 +371,6 @@ const Login: React.FC = () => {
                 isInvalidCode: false,
                 isInvalidCodeLength: false
               });
-
 
             }}
 
@@ -404,12 +406,17 @@ const Login: React.FC = () => {
                         maxLength={10}
                         inputValue={phoneNumber}
                         onChange={(input) => {
-                          if (input.detail.value) {
-                            setPhoneNumber(input.detail.value);
-                            console.log(countryCode + input.detail.value);
+                          if (input.target.value) {
+
+                            if (!NUMBER_REGEX.test(input.target.value)) {
+                              return;
+                            }
+
+                            setPhoneNumber(input.target.value);
+                            console.log(countryCode + input.target.value);
 
                             let loginBtnBgColor = currentButtonColor;
-                            if (input.detail.value.length === 10) {
+                            if (input.target.value.length === 10) {
                               console.log(phoneNumber);
                               setCurrentButtonColor(Buttoncolors.Valid);
                               phoneNumberErrorRef.current.style.display =
@@ -421,7 +428,7 @@ const Login: React.FC = () => {
                             }
                           } else {
                             setPhoneNumber("");
-                            console.log(countryCode + input.detail.value);
+                            console.log(countryCode + input.target.value);
                           }
                         }}
                       ></TextBox>
@@ -516,16 +523,19 @@ const Login: React.FC = () => {
                       maxLength={6}
                       inputValue={verificationCode.trim()}
                       onChange={(input) => {
-                        if (input.detail.value) {
-                          setVerificationCode(input.detail.value.trim());
-                          console.log(input.detail.value);
+                        if (input.target.value) {
+                          if (!NUMBER_REGEX.test(input.target.value)) {
+                            return;
+                          }
+                          setVerificationCode(input.target.value.trim());
+                          console.log(input.target.value);
                           setIsInvalidCode({
                             isInvalidCode: false,
                             isInvalidCodeLength: false,
                           });
                           let otpBtnBgColor =
                             getOtpBtnRef.current.style.backgroundColor;
-                          if (input.detail.value.length === 6) {
+                          if (input.target.value.length === 6) {
                             getOtpBtnRef.current.style.backgroundColor =
                               Buttoncolors.Valid;
                             setIsInvalidCode({
@@ -540,7 +550,7 @@ const Login: React.FC = () => {
                           }
                         } else {
                           setVerificationCode("");
-                          console.log(input.detail.value);
+                          console.log(input.target.value);
                         }
                       }}
                     ></TextBox>

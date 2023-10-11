@@ -27,6 +27,7 @@ import { Util } from "../utility/util";
 import Class from "../models/class";
 import { schoolUtil } from "../utility/schoolUtil";
 import DropDown from "../components/DropDown";
+import { Timestamp } from "firebase/firestore";
 
 const localData: any = {};
 let localStorageData: any = {};
@@ -128,25 +129,28 @@ const DisplaySubjects: FC<{}> = () => {
         if (!!localStorageData.courses) {
           let tmpCourses: Course[] = Util.convertCourses(localStorageData.courses);
           localData.courses = tmpCourses;
-
           setCourses(tmpCourses);
-
           if (!!localStorageData.stage && localStorageData.stage !== STAGES.SUBJECTS && !!localStorageData.currentCourseId) {
-
             setStage(localStorageData.stage);
             let cc: Course = localData.courses.find(cour => localStorageData.currentCourseId === cour.docId)
+
+            let _localMap = getLocalGradeMap();
+
+            if (!!_localMap) {
+              if (!!localStorageData.currentGrade) {
+                localData.currentGrade = localStorageData.currentGrade;
+                setCurrentGrade(localStorageData.currentGrade);
+                const tmpCurrentCourse = _localMap?.courses.find(
+                  (course) => course.grade.id === localData.currentGrade.docId
+                );
+
+                if (!!tmpCurrentCourse)
+                  cc = tmpCurrentCourse;
+              }
+            };
+
             localData.currentCourse = cc;
             setCurrentCourse(cc);
-
-            if (!!localStorageData.localGradeMap) {
-              localData.localGradeMap = localStorageData.localGradeMap;
-              setLocalGradeMap(localStorageData.localGradeMap);
-            }
-
-            if (!!localStorageData.currentGrade) {
-              localData.currentGrade = localStorageData.currentGrade;
-              setCurrentGrade(localStorageData.currentGrade);
-            }
 
             if (!!localStorageData.currentChapterId) {
               let cChap: Chapter = localData.currentCourse.chapters.find(chap => localStorageData.currentChapterId === chap.id)
@@ -187,6 +191,13 @@ const DisplaySubjects: FC<{}> = () => {
       await getCourses();
       console.log("🚀 ~ file: DisplaySubjects.tsx:131 ~ init ~ getCourses:");
     }
+    getLocalGradeMap();
+  };
+
+  function getLocalGradeMap(): {
+    grades: Grade[];
+    courses: Course[];
+  } | undefined {
     let map = localStorage.getItem(GRADE_MAP);
     if (!!map) {
       let _localMap: {
@@ -196,9 +207,9 @@ const DisplaySubjects: FC<{}> = () => {
       let convertedCourses = Util.convertCourses(_localMap.courses);
       _localMap.courses = convertedCourses;
       setLocalGradeMap(_localMap);
-    };
-  };
-
+      return _localMap;
+    }
+  }
 
 
   function addDataToLocalStorage() {
@@ -255,11 +266,16 @@ const DisplaySubjects: FC<{}> = () => {
         history.replace(PAGES.HOME);
         break;
       case STAGES.CHAPTERS:
+        delete localData.currentChapter;
+        delete localStorageData.currentChapterId;
+        setCurrentChapter(undefined);
         localStorageData.stage = STAGES.SUBJECTS;
         addDataToLocalStorage();
         setStage(STAGES.SUBJECTS);
         break;
       case STAGES.LESSONS:
+        delete localData.lessons;
+        setLessons(undefined);
         localStorageData.stage = STAGES.CHAPTERS;
         addDataToLocalStorage();
         setStage(STAGES.CHAPTERS);
@@ -310,6 +326,29 @@ const DisplaySubjects: FC<{}> = () => {
     addDataToLocalStorage();
     setStage(STAGES.LESSONS);
   };
+
+  function getLastPlayedLessonIndex() {
+    let lastPlayedLessonDate: Timestamp;
+    let startIndex = 0;
+    if (!!lessonResultMap)
+      lessons?.forEach((less: Lesson, i: number) => {
+        const studentResultOfLess = lessonResultMap[less.docId];
+        if (!!studentResultOfLess) {
+          if (!lastPlayedLessonDate) {
+            lastPlayedLessonDate = lessonResultMap[less.docId].date;
+            startIndex = i;
+          } else {
+            if (lessonResultMap[less.docId].date > lastPlayedLessonDate) {
+              lastPlayedLessonDate = studentResultOfLess.date;
+              startIndex = i;
+            }
+          }
+        }
+      })
+
+    return startIndex;
+  }
+
   return (
     <IonPage id="display-subjects-page">
       <Loading isLoading={isLoading} />
@@ -365,6 +404,7 @@ const DisplaySubjects: FC<{}> = () => {
               grades={!!localGradeMap ? localGradeMap.grades : localGradeMap}
               onGradeChange={onGradeChanges}
               course={currentCourse}
+              currentChapterId={currentChapter?.id}
             />
           )}
       </div>
@@ -375,8 +415,9 @@ const DisplaySubjects: FC<{}> = () => {
             isHome={true}
             course={currentCourse!}
             lessonsScoreMap={lessonResultMap || {}}
-            startIndex={0}
+            startIndex={getLastPlayedLessonIndex()}
             showSubjectName={false}
+            showChapterName={false}
           />
         </div>
       )}
